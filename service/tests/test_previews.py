@@ -336,3 +336,36 @@ def test_real_client_uses_root_api_paths():
     assert c.apply_spec("apiVersion: picopaas/v1", None).id == 9
     assert c.get_app(9).status == "running" and c.logs(9) == "a\nb"
     assert [p for _, p in seen] == ["/auth/me", "/apps/spec", "/apps/9", "/apps/9/logs"]
+
+
+# ---- database ----------------------------------------------------------------
+
+def test_no_database_by_default(pv):
+    pv.post(f"/projects/{pv.pid}/deploy")
+    spec = pv.pp.applied[0]["spec"]
+    assert "resources" not in spec and "DB_HOST" not in spec
+
+
+def test_mysql_database_from_manifest(pv):
+    with db.session_scope() as s:
+        builder.Workspace(s, pv.pid).write("kaisen.json", '{"runtime": "python", "start": "python app.py", "database": "mysql"}')
+    pv.post(f"/projects/{pv.pid}/deploy")
+    spec = pv.pp.applied[0]["spec"]
+    assert "resources:\n  db: true\n  db_engine: mysql\nenv:\n" in spec
+    assert '\n  DB_HOST: "${{ db.host }}"\n' in spec and '\n  DB_CA_CERT: "${{ db.ca_cert }}"\n' in spec
+    assert '\n  DATABASE_URL: "${{ db.url }}"\n' in spec and 'KAISEN_BUNDLE_URL: "http://testserver/' in spec
+    assert "healthCheck:\n  enabled: false\n" in spec
+
+
+def test_unsupported_database_is_refused(pv):
+    with db.session_scope() as s:
+        builder.Workspace(s, pv.pid).write("kaisen.json", '{"runtime": "python", "start": "x", "database": "oracle"}')
+    r = pv.post(f"/projects/{pv.pid}/deploy")
+    assert "must be one of mysql" in page(pv, r) and pv.pp.applied == []
+
+
+def test_brief_is_shown_escaped(configured):
+    c = configured
+    r = c.post("/projects/new", name="Xss", brief="<script>alert(1)</script> keep me")
+    html = c.client.get(r.headers["location"]).text
+    assert "&lt;script&gt;alert(1)&lt;/script&gt; keep me" in html and "<script>alert(1)" not in html

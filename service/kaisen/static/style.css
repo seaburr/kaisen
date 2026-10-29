@@ -19,3 +19,4 @@ fieldset.choice{border:0;padding:0;margin:.4rem 0}fieldset.choice label{font-wei
 form:has(#mode_download:checked) .github-only{display:none}
 details.help{background:#fff;border:1px solid #ddd;padding:.5rem .8rem;margin:.6rem 0}details.help summary{cursor:pointer;font-weight:600}
 details.help li{margin:.25rem 0}code{font:13px ui-monospace,monospace;background:#eee;padding:0 .2rem}
+.brief{white-space:pre-wrap}

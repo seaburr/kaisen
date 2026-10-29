@@ -64,17 +64,47 @@ def make_bundle(s: Session, p: Project, public_url: str) -> tuple[str, str]:
     return f"{public_url.rstrip('/')}/bundles/{token}.tar.gz", sha
 
 
-def spec_yaml(name: str, image: str, url: str, sha: str) -> str:
+# A project that declares {"database": "mysql"} in kaisen.json gets its own PicoPaaS MySQL database (50 MB, TLS) and
+# these env vars. PicoPaaS cannot remove a database from an app later, so this is one-way for that preview.
+DB_ENV = {
+    "DB_HOST": "${{ db.host }}", "DB_PORT": "${{ db.port }}", "DB_NAME": "${{ db.name }}", "DB_USER": "${{ db.user }}",
+    "DB_PASSWORD": "${{ db.password }}", "DB_CA_CERT": "${{ db.ca_cert }}", "DATABASE_URL": "${{ db.url }}",
+}
+DATABASES = ("mysql",)
+
+
+def wanted_database(s: Session, p: Project) -> str | None:
+    """The database kaisen.json asks for, or None. Raises PreviewError for an unsupported value."""
+    row = s.scalars(select(ProjectFile).where(ProjectFile.project_id == p.id, ProjectFile.path == "kaisen.json")).first()
+    try:
+        db = (json.loads(row.content) if row else {}).get("database")
+    except (ValueError, AttributeError):
+        return None  # a broken manifest is reported by the runtime at boot, where the builder can read it
+    if db in (None, "", False):
+        return None
+    if db not in DATABASES:
+        raise PreviewError(f'kaisen.json "database" must be one of {", ".join(DATABASES)} (got {db!r})')
+    return db
+
+
+def spec_yaml(name: str, image: str, url: str, sha: str, database: str | None = None) -> str:
     q = json.dumps  # JSON strings are valid YAML scalars
-    return (f"apiVersion: picopaas/v1\nname: {q(name)}\nimage: {q(image)}\nport: 8080\n"
-            f"healthCheck:\n  enabled: false\nenv:\n  KAISEN_BUNDLE_URL: {q(url)}\n  KAISEN_BUNDLE_SHA256: {q(sha)}\n")
+    out = f"apiVersion: picopaas/v1\nname: {q(name)}\nimage: {q(image)}\nport: 8080\nhealthCheck:\n  enabled: false\n"
+    if database:
+        out += f"resources:\n  db: true\n  db_engine: {database}\n"
+    out += f"env:\n  KAISEN_BUNDLE_URL: {q(url)}\n  KAISEN_BUNDLE_SHA256: {q(sha)}\n"
+    if database:
+        out += "".join(f"  {k}: {q(v)}\n" for k, v in DB_ENV.items())
+    return out
 
 
 def deploy(s: Session, p: Project, rs: RuntimeSettings, client) -> AppInfo:
     ensure_configured(rs)
+    database = wanted_database(s, p)
     url, sha = make_bundle(s, p, rs.public_url)
     try:
-        info = client.apply_spec(spec_yaml(app_name(p), config.runtime_image(), url, sha), rs.picopaas_project or None)
+        info = client.apply_spec(spec_yaml(app_name(p), config.runtime_image(), url, sha, database),
+                                 rs.picopaas_project or None)
     except PicoPaasError as e:
         raise PreviewError(str(e)) from None
     p.app_id, p.app_hostname, p.deploy_status, p.last_deploy = info.id, info.hostname, info.status, utcnow()

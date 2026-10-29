@@ -39,3 +39,13 @@ The builder's `deploy_preview` tool deploys and reports status, HTTP code and lo
 page has the preview link, **Deploy now** and **Tell Kaisen what to change** (starts a fresh run from the files, last summary
 and your feedback). New PicoPaaS accounts may run 1 app (Kaisen itself): use a project with free slots or ask your admin.
 `runtime/` is not built by the tests; `tests/test_runtime_boot.py` covers the pure parts of `boot.py`.
+
+## Docker builds locally
+Start Docker (`open -a Docker` on macOS), then from the repo root:
+```bash
+docker build -t kaisen-runtime:local runtime/                                   # the preview runtime (~460 MB)
+docker build --build-arg RUNTIME_IMAGE=kaisen-runtime:local -t kaisen:local service/   # Kaisen itself (~335 MB)
+runtime/smoke-local.sh ~/Downloads/<project>.tar.gz   # run a downloaded project like PicoPaaS would; KEEP=1 to poke at it
+```
+Apple silicon builds arm64 by default; `PLATFORM=linux/amd64 runtime/smoke-local.sh ...` matches the cluster (slower).
+
