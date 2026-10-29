@@ -36,3 +36,10 @@ def test_level_from_env(monkeypatch):
 def test_noisy_libraries_stay_at_warning():
     loggers = logging_setup.config_dict("DEBUG")["loggers"]
     assert all(loggers[n]["level"] == "WARNING" for n in ("httpx", "httpx2", "httpcore"))
+
+
+def test_bundle_token_is_not_logged():
+    rec = logging.LogRecord("uvicorn.access", logging.INFO, "h11_impl.py", 1, '%s - "%s %s HTTP/%s" %d',
+                            ("10.0.0.1:5000", "GET", "/bundles/not-a-real-token-abc123.tar.gz", "1.1", 200), None)
+    line = _fmt("access", rec)
+    assert "not-a-real-token" not in line and '"GET /bundles/<redacted> HTTP/1.1" 200' in line
