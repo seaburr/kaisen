@@ -1,15 +1,17 @@
 """Background worker: DB lease with fencing token, then run queued builds."""
 import logging
 import threading
+import time
 import uuid
 from datetime import timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import builder, db, outputs, settings_store
+from . import builder, config, db, outputs, previews, settings_store
 from .github import GitHubError
 from .llm import ModelError
+from .picopaas import PicoPaasError
 from .models import InboxItem, Lease as LeaseRow, Project, Run, utcnow
 from .redact import redact
 
@@ -66,7 +68,8 @@ class Lease:
             return bool(row and row.holder == self.holder and row.token == self.token and row.expires > utcnow())
 
 
-def tick(client_factory, lease: Lease, github_factory=None) -> bool:
+def tick(client_factory, lease: Lease, github_factory=None, picopaas_factory=None,
+         preview_wait: float = config.PREVIEW_WAIT_TOOL, sleep=time.sleep) -> bool:
     """Run one queued step if we hold the lease. Returns True if work was attempted."""
     if not lease.acquire():
         return False
@@ -80,9 +83,29 @@ def tick(client_factory, lease: Lease, github_factory=None) -> bool:
     except ModelError as e:
         builder.stop_run(run_id, "error", "error", str(e))
         return True
-    if builder.run_step(run_id, client, lease) == "done" and github_factory is not None:
-        _push_on_finish(run_id, github_factory)
+    deployer = previews.make_deployer(picopaas_factory, preview_wait, sleep=sleep) if picopaas_factory else None
+    if builder.run_step(run_id, client, lease, deployer=deployer) == "done":
+        if picopaas_factory is not None:
+            _deploy_on_finish(run_id, picopaas_factory, preview_wait, sleep)
+        if github_factory is not None:
+            _push_on_finish(run_id, github_factory)
     return True
+
+
+def _deploy_on_finish(run_id: int, picopaas_factory, wait_s: float, sleep=time.sleep) -> None:
+    """If PicoPaaS is configured, deploy the finished project; report in the inbox."""
+    with db.session_scope() as s:
+        rs = settings_store.load(s)
+        if not rs.preview_enabled:
+            return
+        run = s.get(Run, run_id)
+        p = s.get(Project, run.project_id)
+        try:
+            res = previews.run_preview(s, p, rs, picopaas_factory, wait_s, sleep=sleep)
+            text = ("Preview deployed: " if res.ok else "Preview deployed but not healthy yet: ") + res.text
+        except (previews.PreviewError, PicoPaasError) as e:
+            text = f"Automatic preview deploy failed: {e}. Fix Settings > PicoPaaS, then press Deploy now on the project page."
+        s.add(InboxItem(project_id=p.id, run_id=run_id, kind="deploy", text=redact(text, rs.secret_values())))
 
 
 def _push_on_finish(run_id: int, github_factory) -> None:
@@ -102,9 +125,10 @@ def _push_on_finish(run_id: int, github_factory) -> None:
 
 
 class Worker:
-    def __init__(self, client_factory, github_factory=None):
+    def __init__(self, client_factory, github_factory=None, picopaas_factory=None):
         self.client_factory = client_factory
         self.github_factory = github_factory
+        self.picopaas_factory = picopaas_factory
         self.lease = Lease()
         self.stop = threading.Event()
         self.threads: list[threading.Thread] = []
@@ -118,7 +142,7 @@ class Worker:
     def _loop(self):
         while not self.stop.is_set():
             try:
-                busy = tick(self.client_factory, self.lease, self.github_factory)
+                busy = tick(self.client_factory, self.lease, self.github_factory, self.picopaas_factory)
             except Exception:
                 log.exception("worker tick failed")
                 busy = False

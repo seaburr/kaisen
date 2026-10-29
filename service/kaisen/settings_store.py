@@ -1,6 +1,7 @@
 """Settings in the DB. Secrets are Fernet-encrypted and write-only from the UI."""
 import re
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
@@ -9,8 +10,9 @@ from .models import Setting
 
 SECRET_KEYS = ("anthropic_api_key", "github_token", "picopaas_key")
 PLAIN_KEYS = ("model", "effort", "cap_run", "cap_day", "cap_project", "paused",
-              "github_repo", "github_branch", "picopaas_url", "output_mode", "push_on_finish", "open_pr")
+              "github_repo", "github_branch", "picopaas_url", "picopaas_project", "public_url", "output_mode", "push_on_finish", "open_pr")
 OUTPUT_MODES = ("download", "github")
+_PROJECT_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 _REPO_RE = re.compile(r"^(?:https?://github\.com/)?([A-Za-z0-9-]{1,39})/([A-Za-z0-9._-]{1,100}?)(?:\.git)?/?$")
 
 
@@ -27,7 +29,9 @@ class RuntimeSettings:
     paused: bool = False
     github_repo: str = ""
     github_branch: str = ""
-    picopaas_url: str = ""
+    picopaas_url: str = config.PICOPAAS_DEFAULT_URL
+    picopaas_project: str = ""
+    public_url: str = ""
     output_mode: str = "download"  # download | github (download is always available)
     push_on_finish: bool = True
     open_pr: bool = False
@@ -35,6 +39,10 @@ class RuntimeSettings:
     @property
     def push_enabled(self) -> bool:
         return self.output_mode == "github" and bool(self.github_repo and self.github_token)
+
+    @property
+    def preview_enabled(self) -> bool:
+        return bool(self.picopaas_key and self.picopaas_url)
 
     def secret_values(self) -> list[str]:
         return [self.anthropic_api_key, self.github_token, self.picopaas_key, config.get().secret_key]
@@ -96,13 +104,22 @@ def save_form(s: Session, form) -> None:
             bool(load(s).github_token) and not form.get("clear_github_token"))
         if not has_token:
             raise ValueError("Pushing to GitHub needs an access token (see the instructions under the token field)")
+    pp_url = _clean_url(form.get("picopaas_url", ""), "PicoPaaS URL") or config.PICOPAAS_DEFAULT_URL
+    pp_project = form.get("picopaas_project", "").strip().lower()
+    if pp_project and not _PROJECT_RE.match(pp_project):
+        raise ValueError("PicoPaaS project must be a slug: lowercase letters, digits and dashes")
+    public = _clean_url(form["public_url"], "Kaisen public URL") if "public_url" in form else None
+    set_value(s, "picopaas_url", pp_url)
+    set_value(s, "picopaas_project", pp_project)
+    if public is not None:
+        set_value(s, "public_url", public)
     set_value(s, "model", model)
     set_value(s, "effort", form["effort"])
     for k, v in caps.items():
         set_value(s, k, str(v))
     set_value(s, "output_mode", mode)
     set_value(s, "github_repo", repo)
-    for k in ("github_branch", "picopaas_url"):
+    for k in ("github_branch",):
         set_value(s, k, form.get(k, "").strip())
     for k in ("push_on_finish", "open_pr"):
         set_value(s, k, "1" if form.get(k) else "0")
@@ -117,3 +134,29 @@ def parse_repo(text: str) -> str:
     """'https://github.com/owner/repo(.git)' or 'owner/repo' -> 'owner/repo'; '' if it is neither."""
     m = _REPO_RE.match(text.strip())
     return f"{m.group(1)}/{m.group(2)}" if m else ""
+
+
+def _clean_url(text: str, label: str) -> str:
+    """'' stays ''. Otherwise an http(s) URL without path; https is required outside dev/test."""
+    text = text.strip().rstrip("/")
+    if not text:
+        return ""
+    u = urlparse(text)
+    if u.scheme not in ("http", "https") or not u.netloc or u.path or u.query or u.fragment or u.username:
+        raise ValueError(f"{label} must look like https://host (no path)")
+    if u.scheme != "https" and config.get().cookie_secure:
+        raise ValueError(f"{label} must use https")
+    return text
+
+
+def capture_public_url(s: Session, base_url: str) -> None:
+    """Remember the URL the admin reached Kaisen on, if none is set yet (editable in Settings)."""
+    row = s.get(Setting, "public_url")
+    if row is not None and row.value:
+        return
+    try:
+        url = _clean_url(base_url, "Kaisen public URL")
+    except ValueError:
+        return
+    if url:
+        set_value(s, "public_url", url)

@@ -53,3 +53,25 @@ Where this file and `SPEC.md` disagree, this file wins for v0. Everything in SPE
 
 ## Next (not v0)
 Run tests (GitHub Actions on the pushed branch, CI summary fed back as a step), security-reviewer role, deploy to PicoPaaS preview, planner role, GHCR flips.
+
+## Preview loop (Chas 2026-10-29, the core of v0)
+> A customer deploys Kaisen, wires it up, starts building; Kaisen deploys their app onto PicoPaaS so they can fiddle
+> with it, and Kaisen continues to iterate as it builds.
+
+No image builds and no CI in the loop. One public generic runtime image runs any generated project:
+- **Runtime image** `ghcr.io/seaburr/kaisen-runtime:<sha>` (built by release.yml from `runtime/`): node 22 + python 3, `USER 10001`,
+  stdlib boot script. Env `KAISEN_BUNDLE_URL`, `KAISEN_BUNDLE_SHA256`. Boot: download (retry), verify sha256, safe-extract to
+  `/home/app/src`, read `kaisen.json` `{"runtime": "static"|"python"|"node", "start": "<cmd>", "health": "/"}`; python:
+  `pip install -r requirements.txt` into a venv; node: `npm install --omit=dev`; static: serve `public/` (or the root) with a
+  tiny stdlib server. Then exec the start command with `PORT=8080`. Install output goes to stdout so Kaisen can read it.
+- **Bundles:** `GET /bundles/{token}.tar.gz` on Kaisen, unauthenticated, token = 32 random bytes (stored hashed), one per deploy;
+  only the latest 3 per project stay valid. Kaisen's public URL is captured from the admin's browser requests (editable in Settings).
+- **Deploy:** `POST {picopaas_url}/api/apps/spec` as the customer (Settings: PicoPaaS URL default `https://platform.picopaas.xyz`,
+  full API key, optional project slug). App `kaisen-<slug>`, image = runtime, port 8080, `healthCheck` **disabled** (pip/npm
+  install at boot can outlast the liveness window); Kaisen checks the URL itself. No secrets, no DB in v0.
+- **Builder tool `deploy_preview`:** deploys the current files, waits up to 4 min for running/failed and an HTTP response on the
+  app URL, returns status, HTTP code and the last 60 log lines (redacted, control characters stripped, 4 KB cap). The builder
+  must deploy and see a 2xx before `finish`.
+- **On finish:** auto-deploy if PicoPaaS is configured. Project page: live preview link + status, Deploy now, and
+  **"Tell Kaisen what to change"** → a new run that starts from the current files, the previous summary and the feedback.
+- PicoPaaS limits to note: new accounts get 1 app (Kaisen itself); deploy into a project (3 apps by default) or ask the admin.

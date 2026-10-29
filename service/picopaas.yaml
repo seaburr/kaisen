@@ -10,3 +10,5 @@ env:
   DATABASE_CA_CERT: ${{ db.ca_cert }}
 secrets:
   - SECRET_KEY
+# Optional: KAISEN_RUNTIME_IMAGE overrides the runtime image baked into the Kaisen image (ghcr.io/<owner>/kaisen-runtime:<sha>).
+# Previews also need Settings > PicoPaaS (API key) and a public https URL for this app.

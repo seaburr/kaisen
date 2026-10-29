@@ -4,6 +4,7 @@ import re
 os.environ["ENVIRONMENT"] = "test"
 os.environ["WORKER_ENABLED"] = "0"
 os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["KAISEN_RUNTIME_IMAGE"] = "ghcr.io/test-owner/kaisen-runtime:abc123"
 os.environ.pop("SECRET_KEY", None)
 
 import pytest
@@ -13,6 +14,7 @@ from kaisen import auth, db
 from kaisen.github import FakeGitHub
 from kaisen.llm import FakeModelClient
 from kaisen.main import create_app
+from kaisen.picopaas import FakePicoPaas
 from kaisen.worker import Lease, tick
 
 PASSWORD = "not-the-password-123"
@@ -32,7 +34,10 @@ def ctx():
     c = Ctx()
     c.model = FakeModelClient()
     c.gh = FakeGitHub()
-    app = create_app(model_client_factory=lambda rs: c.model, github_factory=lambda tok: c.gh, start_worker=False)
+    c.pp = FakePicoPaas()
+    app = create_app(model_client_factory=lambda rs: c.model, github_factory=lambda tok: c.gh,
+                     picopaas_factory=lambda url, key: c.pp, start_worker=False)
+    app.state.preview_wait = 0
     db.Base.metadata.create_all(db.engine)
     c.code = auth.ensure_setup_code()
     c.client = TestClient(app, follow_redirects=False)
@@ -41,7 +46,8 @@ def ctx():
     c.csrf = lambda path="/settings": csrf_of(c.client, path)
     c.post = lambda path, **data: c.client.post(path, data={"csrf": c.csrf("/login" if not c.logged else "/settings"), **data})
     c.logged = False
-    c.tick = lambda: tick(lambda rs: c.model, c.lease, lambda tok: c.gh)
+    c.tick = lambda: tick(lambda rs: c.model, c.lease, lambda tok: c.gh, lambda url, key: c.pp,
+                         preview_wait=0, sleep=lambda n: None)
     yield c
     if db.engine is not None:
         db.engine.dispose()

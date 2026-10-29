@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.mysql import MEDIUMTEXT
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
+from sqlalchemy.dialects.mysql import LONGBLOB, MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column
 
 # MySQL TEXT holds 64 KB; files may be 200 KB and briefs can be long.
 LongText = Text().with_variant(MEDIUMTEXT(), "mysql")
+LongBlob = LargeBinary().with_variant(LONGBLOB(), "mysql")
 
 from .db import Base
 
@@ -42,6 +43,22 @@ class Project(Base):
     slug: Mapped[str] = mapped_column(String(120), unique=True)
     brief: Mapped[str] = mapped_column(LongText)
     github_repo: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # live preview on PicoPaaS
+    app_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    app_hostname: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    deploy_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    last_deploy: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Bundle(Base):
+    """A deployable tar.gz, fetched by the runtime image via an unguessable token (stored only as a hash)."""
+    __tablename__ = "bundles"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    sha256: Mapped[str] = mapped_column(String(64))
+    data: Mapped[bytes] = mapped_column(LongBlob)
     created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -89,7 +106,7 @@ class InboxItem(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id"))
-    kind: Mapped[str] = mapped_column(String(16))  # question | budget | refusal | limit | error | push
+    kind: Mapped[str] = mapped_column(String(16))  # question | budget | refusal | limit | error | push | deploy
     text: Mapped[str] = mapped_column(Text)
     answer: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(8), default="open", index=True)  # open | closed

@@ -14,7 +14,7 @@ def test_alembic_upgrade_head_on_temp_sqlite(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     tables = set(inspect(create_engine(f"sqlite:///{db}")).get_table_names())
-    assert {"settings", "users", "projects", "project_files", "runs", "events", "inbox", "lease"} <= tables
+    assert {"settings", "users", "projects", "project_files", "runs", "events", "inbox", "lease", "bundles"} <= tables
 
 
 def test_mysql_engine_settings(tmp_path):

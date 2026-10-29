@@ -43,13 +43,24 @@
 <label><input type="checkbox" name="push_on_finish" value="1"{% if rs.push_on_finish %} checked{% endif %}> Push automatically when a build finishes</label>
 <label><input type="checkbox" name="open_pr" value="1"{% if rs.open_pr %} checked{% endif %}> Open a pull request after pushing</label>
 </div>
-<h2>PicoPaaS (optional, unused for now)</h2>
-<label for="picopaas_url">API URL</label><input id="picopaas_url" type="text" name="picopaas_url" value="{{ rs.picopaas_url }}">
+<h2>PicoPaaS (live previews)</h2>
+<p class="muted">Kaisen deploys each project as a live preview app named <code>kaisen-&lt;project&gt;</code> in your PicoPaaS account (or in the project below). Previews are optional.</p>
+<details class="help"{% if not rs.picopaas_key %} open{% endif %}><summary>How to set this up</summary>
+<ol>
+<li>In PicoPaaS, open <strong>Account &gt; API keys</strong>, create a key with <strong>full access</strong> and paste it below.</li>
+<li>New accounts can run 1 app, and Kaisen itself uses it. Pick a project below that has free slots, or ask your admin to raise your limit.</li>
+<li>Save, then press <strong>Test PicoPaaS</strong>.</li>
+</ol></details>
+<label for="picopaas_url">PicoPaaS URL</label><input id="picopaas_url" type="text" name="picopaas_url" value="{{ rs.picopaas_url }}" placeholder="https://platform.picopaas.xyz">
 <label for="picopaas_key">API key <span class="muted">({{ secrets.picopaas_key }})</span></label>
 <input id="picopaas_key" type="password" name="picopaas_key" autocomplete="off" placeholder="leave blank to keep">
 <label><input type="checkbox" name="clear_picopaas_key" value="1"> Clear stored key</label>
+<label for="picopaas_project">PicoPaaS project (optional slug; blank = your account)</label><input id="picopaas_project" type="text" name="picopaas_project" value="{{ rs.picopaas_project }}">
+<label for="public_url">Kaisen public URL</label><input id="public_url" type="text" name="public_url" value="{{ rs.public_url }}" placeholder="https://kaisen.example.com">
+<p class="muted">Previews download their files from this address, so it must be reachable from PicoPaaS. Filled in automatically from your browser address; change it if that is wrong.</p>
 <p><button class="primary">Save</button></p></form>
 <h2>Test (uses saved settings)</h2>
 <form class="inline" method="post" action="/settings/test/anthropic"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test Anthropic</button></form>
+<form class="inline" method="post" action="/settings/test/picopaas"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test PicoPaaS</button></form>
 {% if rs.output_mode == "github" %}<form class="inline" method="post" action="/settings/test/github"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test GitHub</button></form>{% endif %}
 {% endblock %}

@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 
 from . import auth, config, db, logging_setup
 from .github import RealGitHub
+from .picopaas import RealPicoPaas
 from .llm import AnthropicClient, ModelError
 from .models import Run
 from .routes import router
@@ -24,7 +25,7 @@ def default_model_client(rs):
     return AnthropicClient(rs.anthropic_api_key)
 
 
-def create_app(model_client_factory=default_model_client, github_factory=RealGitHub,
+def create_app(model_client_factory=default_model_client, github_factory=RealGitHub, picopaas_factory=RealPicoPaas,
                start_worker: bool | None = None) -> FastAPI:
     cfg = config.load()
     db.configure(cfg.database_url, cfg.database_ca_cert)
@@ -34,7 +35,7 @@ def create_app(model_client_factory=default_model_client, github_factory=RealGit
     @asynccontextmanager
     async def lifespan(app):
         auth.ensure_setup_code()
-        worker = Worker(app.state.model_client_factory, app.state.github_factory) if run_worker else None
+        worker = Worker(app.state.model_client_factory, app.state.github_factory, app.state.picopaas_factory) if run_worker else None
         if worker:
             worker.start()
         yield
@@ -44,6 +45,8 @@ def create_app(model_client_factory=default_model_client, github_factory=RealGit
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.model_client_factory = model_client_factory
     app.state.github_factory = github_factory
+    app.state.picopaas_factory = picopaas_factory
+    app.state.preview_wait = config.PREVIEW_WAIT_UI
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
     @app.middleware("http")

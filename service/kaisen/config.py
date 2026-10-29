@@ -18,6 +18,19 @@ MAX_PROJECT_BYTES = 5 * 1024 * 1024
 MAX_TURNS = 40
 STEP_SECONDS = 15 * 60
 
+# Preview loop
+BUNDLES_KEPT = 3
+PICOPAAS_DEFAULT_URL = "https://platform.picopaas.xyz"
+PREVIEW_WAIT_TOOL = 240  # builder tool and auto-deploy: wait for running + an HTTP answer
+PREVIEW_WAIT_UI = 20  # Deploy now / Check status buttons
+PREVIEW_RESULT_BYTES = 4096
+
+
+def runtime_image() -> str:
+    """Runtime image for previews. Baked into the Kaisen image at build time; the env var wins."""
+    return os.environ.get("KAISEN_RUNTIME_IMAGE", "").strip()
+
+
 DEV_SECRET = "dev-only-insecure-secret-key"
 
 

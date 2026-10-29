@@ -19,6 +19,9 @@ TOOLS = [
                       "required": ["path", "content"]}},
     {"name": "delete_file", "description": "Delete a project file.",
      "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}},
+    {"name": "deploy_preview", "description": "Deploy the current files as a live preview and report status, HTTP code "
+     "and recent logs. Takes up to 4 minutes. Call it before finish and fix whatever it reports.",
+     "input_schema": {"type": "object", "properties": {}}},
     {"name": "ask_human", "description": "Ask the human one question and wait for the answer.",
      "input_schema": {"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]}},
     {"name": "finish", "description": "Declare the project complete, with a short summary.",
