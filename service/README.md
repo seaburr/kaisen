@@ -23,7 +23,7 @@ python -m pytest -q
 Tests use SQLite in memory, the real setup+login flow, and fakes for the model and GitHub.
 
 ## Deploy (what Chas does)
-1. `picopaas apply` with `image: ghcr.io/<owner>/kaisen:<sha>`, port 8080, `healthCheck /healthz`, `resources: {db: true, db_engine: pg}`, secret `SECRET_KEY` (see `picopaas.yaml`).
+1. `picopaas apply` with `image: ghcr.io/<owner>/kaisen:<sha>`, port 8080, `healthCheck /healthz`, `resources: {db: true, db_engine: mysql}`, env `DATABASE_URL: ${{ db.url }}` and `DATABASE_CA_CERT: ${{ db.ca_cert }}`, secret `SECRET_KEY` (see `picopaas.yaml`).
 2. Read the setup code from the app logs, open `/setup`, set the password.
 3. Settings: paste Anthropic API key, pick model, set caps. Under **Output** choose *Download only* or *Download and push to GitHub*; for pushes give the repository URL and a fine-grained token (the page has step-by-step instructions). Use the **Test** buttons.
 4. New project: name + brief. Press Build. Watch the run page; answer questions in the inbox; download or push.

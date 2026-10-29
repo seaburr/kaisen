@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column
+
+# MySQL TEXT holds 64 KB; files may be 200 KB and briefs can be long.
+LongText = Text().with_variant(MEDIUMTEXT(), "mysql")
 
 from .db import Base
 
@@ -36,7 +40,7 @@ class Project(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     slug: Mapped[str] = mapped_column(String(120), unique=True)
-    brief: Mapped[str] = mapped_column(Text)
+    brief: Mapped[str] = mapped_column(LongText)
     github_repo: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
@@ -47,7 +51,7 @@ class ProjectFile(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
     path: Mapped[str] = mapped_column(String(300))
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[str] = mapped_column(LongText)
     size: Mapped[int] = mapped_column(Integer)
 
 

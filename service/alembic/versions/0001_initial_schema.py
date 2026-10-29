@@ -5,6 +5,9 @@ Revises:
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
+
+LongText = sa.Text().with_variant(MEDIUMTEXT(), "mysql")
 
 
 revision = '0001'
@@ -33,7 +36,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=120), nullable=False),
     sa.Column('slug', sa.String(length=120), nullable=False),
-    sa.Column('brief', sa.Text(), nullable=False),
+    sa.Column('brief', LongText, nullable=False),
     sa.Column('github_repo', sa.String(length=200), nullable=True),
     sa.Column('created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -55,7 +58,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
     sa.Column('path', sa.String(length=300), nullable=False),
-    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('content', LongText, nullable=False),
     sa.Column('size', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
     sa.PrimaryKeyConstraint('id'),

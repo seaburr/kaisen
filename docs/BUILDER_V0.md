@@ -19,7 +19,7 @@ Where this file and `SPEC.md` disagree, this file wins for v0. Everything in SPE
 | CI as the only test runner | No test execution in v0. The builder writes tests alongside code; running them is the next milestone. |
 
 ## Deploy (what Chas does)
-1. `picopaas apply` with `image: ghcr.io/<owner>/kaisen:<sha>`, port 8080, `healthCheck /healthz`, `resources: {db: true, db_engine: pg}`, secret `SECRET_KEY`.
+1. `picopaas apply` with `image: ghcr.io/<owner>/kaisen:<sha>`, port 8080, `healthCheck /healthz`, `resources: {db: true, db_engine: mysql}`, env `DATABASE_URL: ${{ db.url }}` and `DATABASE_CA_CERT: ${{ db.ca_cert }}`, secret `SECRET_KEY`.
 2. Read the setup code from the app logs, open `/setup`, set the password.
 3. Settings: paste Anthropic API key, pick model, set caps. Under **Output** choose *Download only* or *Download and push to GitHub*; for pushes give the repository URL and a fine-grained token (the page has step-by-step instructions). Use the **Test** buttons.
 4. New project: name + brief. Press Build. Watch the run page; answer questions in the inbox; download or push.
@@ -48,7 +48,7 @@ Where this file and `SPEC.md` disagree, this file wins for v0. Everything in SPE
 ## Platform constraints carried over from SPEC v2 (still apply)
 - `/healthz` static 200, no DB. Agent loop in a worker thread.
 - DB lease with fencing token (rolling update runs two pods); standby pod does not run jobs.
-- Postgres: pool_size 2, max_overflow 0, pre_ping; `postgres://` → `postgresql+psycopg://`; `sslmode=verify-full` with the CA cert when `DATABASE_CA_CERT` is set. SQLite locally and in tests. Alembic migrations.
+- MySQL (Chas 2026-10-29, not Postgres): PyMySQL, `mysql://` → `mysql+pymysql://`, pool_size 2, max_overflow 0, pre_ping, recycle 280; TLS verified against `DATABASE_CA_CERT` (VERIFY_X509_STRICT cleared as in PicoPaaS); `FOUND_ROWS` so the lease CAS sees matched rows; MEDIUMTEXT for file content and briefs. SQLite locally and in tests. Alembic migrations.
 - Inbox/UI security: HttpOnly Secure SameSite=Strict session cookie, CSRF on every POST, login lockout (5 failures / 15 min), escaped output, strict CSP, no inline script, secret redaction in transcripts/logs.
 
 ## Next (not v0)

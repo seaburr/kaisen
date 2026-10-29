@@ -2,7 +2,7 @@ fastapi==0.162.0
 uvicorn==0.54.0
 sqlalchemy==2.1.6
 alembic==1.20.1
-psycopg[binary]==3.3.6
+PyMySQL==1.2.3
 jinja2==3.1.6
 python-multipart==0.0.32
 cryptography==50.0.2
