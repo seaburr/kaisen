@@ -9,10 +9,10 @@
 <ul>{% for path, size in files %}<li>{{ path }} <span class="muted">{{ size }} bytes</span></li>{% else %}<li class="muted">No files yet.</li>{% endfor %}</ul>
 <h2>Output</h2>
 <p><a class="button" href="/projects/{{ p.id }}/download">Download .tar.gz</a></p>
-<form method="post" action="/projects/{{ p.id }}/push"><input type="hidden" name="csrf" value="{{ csrf }}">
-<label for="repo">GitHub repo (owner/name)</label><input id="repo" type="text" name="repo" value="{{ repo }}">
-<p><label><input type="checkbox" name="open_pr" value="1"> Open a pull request</label></p>
-<button class="secondary">Push to GitHub</button></form>
+{% if rs.push_enabled %}<form method="post" action="/projects/{{ p.id }}/push"><input type="hidden" name="csrf" value="{{ csrf }}">
+<p>Pushes to <strong>{{ rs.github_repo }}</strong>, branch <strong>{{ rs.github_branch or "kaisen/" ~ p.slug }}</strong>{% if rs.push_on_finish %} (also automatic when a build finishes){% endif %}.</p>
+<button class="secondary">Push to GitHub now</button></form>
+{% else %}<p class="muted">GitHub pushes are off. Turn them on under <a href="/settings">Settings &gt; Output</a>.</p>{% endif %}
 <h2>Transcript</h2>
 {% for role, text in lines %}<div class="line {{ role }}"><strong>{{ role }}</strong> {{ text }}</div>{% else %}<p class="muted">Nothing yet.</p>{% endfor %}
 {% endblock %}

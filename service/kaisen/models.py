@@ -85,7 +85,7 @@ class InboxItem(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id"))
-    kind: Mapped[str] = mapped_column(String(16))  # question | budget | refusal | limit | error
+    kind: Mapped[str] = mapped_column(String(16))  # question | budget | refusal | limit | error | push
     text: Mapped[str] = mapped_column(Text)
     answer: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(8), default="open", index=True)  # open | closed

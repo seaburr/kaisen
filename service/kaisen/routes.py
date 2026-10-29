@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import auth, builder, config, db, export, settings_store
+from . import auth, builder, config, db, export, outputs, settings_store
 from .github import GitHubError
 from .llm import ModelError
 from .models import Event, InboxItem, Project, ProjectFile, Run, User
@@ -120,7 +120,7 @@ def project_page(pid: int, request: Request, user=Depends(auth.current_user), s:
     lines = transcript_lines(run.messages, rs.secret_values()) if run else []
     files = builder.Workspace(s, pid).list()
     return render(request, "project.html", p=p, run=run, lines=lines, files=files,
-                  total=builder.spend_project(s, pid), repo=p.github_repo or rs.github_repo,
+                  total=builder.spend_project(s, pid), rs=rs,
                   summary=redact(run.summary or "", rs.secret_values()) if run else "",
                   error=redact(run.error or "", rs.secret_values()) if run else "")
 
@@ -146,20 +146,13 @@ def project_push(pid: int, request: Request, user=Depends(auth.current_user), fo
                  s: Session = Depends(db.get_db)):
     p = _project(s, pid)
     rs = settings_store.load(s)
-    repo = form.get("repo", "").strip() or rs.github_repo
-    if not repo or not rs.github_token:
-        return back(request, f"/projects/{pid}", "Set a GitHub repo and token first (Settings).")
-    p.github_repo = repo
-    files = [(r.path, r.content) for r in s.scalars(select(ProjectFile).where(ProjectFile.project_id == pid))]
-    if not files:
-        return back(request, f"/projects/{pid}", "Nothing to push yet.")
-    gh = request.app.state.github_factory(rs.github_token)
+    if not rs.push_enabled:
+        return back(request, f"/projects/{pid}", "Pushing is off. Turn it on under Settings > Output.")
     try:
-        res = gh.push(repo, files, p.slug, rs.github_branch or None, f"Kaisen: {p.name}", bool(form.get("open_pr")))
+        msg = outputs.push_project(s, p, rs, request.app.state.github_factory)
     except GitHubError as e:
         return back(request, f"/projects/{pid}", redact(f"Push failed: {e}", rs.secret_values()))
     s.commit()
-    msg = f"Pushed to {res.url}" + (f" (PR: {res.pr_url})" if res.pr_url else "") + (" (empty repo was seeded)" if res.seeded else "")
     return back(request, f"/projects/{pid}", msg)
 
 

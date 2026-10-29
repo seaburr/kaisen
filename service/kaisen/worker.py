@@ -7,9 +7,11 @@ from datetime import timedelta
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import builder, db, settings_store
+from . import builder, db, outputs, settings_store
+from .github import GitHubError
 from .llm import ModelError
-from .models import Lease as LeaseRow, Run, utcnow
+from .models import InboxItem, Lease as LeaseRow, Project, Run, utcnow
+from .redact import redact
 
 log = logging.getLogger("kaisen.worker")
 LEASE_TTL = 40
@@ -64,7 +66,7 @@ class Lease:
             return bool(row and row.holder == self.holder and row.token == self.token and row.expires > utcnow())
 
 
-def tick(client_factory, lease: Lease) -> bool:
+def tick(client_factory, lease: Lease, github_factory=None) -> bool:
     """Run one queued step if we hold the lease. Returns True if work was attempted."""
     if not lease.acquire():
         return False
@@ -78,13 +80,31 @@ def tick(client_factory, lease: Lease) -> bool:
     except ModelError as e:
         builder.stop_run(run_id, "error", "error", str(e))
         return True
-    builder.run_step(run_id, client, lease)
+    if builder.run_step(run_id, client, lease) == "done" and github_factory is not None:
+        _push_on_finish(run_id, github_factory)
     return True
 
 
+def _push_on_finish(run_id: int, github_factory) -> None:
+    """If the customer turned pushes on, push the finished project; report either way in the inbox."""
+    with db.session_scope() as s:
+        rs = settings_store.load(s)
+        if not (rs.push_enabled and rs.push_on_finish):
+            return
+        run = s.get(Run, run_id)
+        p = s.get(Project, run.project_id)
+        try:
+            text = outputs.push_project(s, p, rs, github_factory)
+        except GitHubError as e:
+            text = redact(f"Automatic push failed: {e}. Fix Settings > Output, then press Push on the project page.",
+                          rs.secret_values())
+        s.add(InboxItem(project_id=p.id, run_id=run_id, kind="push", text=text))
+
+
 class Worker:
-    def __init__(self, client_factory):
+    def __init__(self, client_factory, github_factory=None):
         self.client_factory = client_factory
+        self.github_factory = github_factory
         self.lease = Lease()
         self.stop = threading.Event()
         self.threads: list[threading.Thread] = []
@@ -98,7 +118,7 @@ class Worker:
     def _loop(self):
         while not self.stop.is_set():
             try:
-                busy = tick(self.client_factory, self.lease)
+                busy = tick(self.client_factory, self.lease, self.github_factory)
             except Exception:
                 log.exception("worker tick failed")
                 busy = False

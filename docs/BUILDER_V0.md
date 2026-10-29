@@ -21,7 +21,7 @@ Where this file and `SPEC.md` disagree, this file wins for v0. Everything in SPE
 ## Deploy (what Chas does)
 1. `picopaas apply` with `image: ghcr.io/<owner>/kaisen:<sha>`, port 8080, `healthCheck /healthz`, `resources: {db: true, db_engine: pg}`, secret `SECRET_KEY`.
 2. Read the setup code from the app logs, open `/setup`, set the password.
-3. Settings: paste Anthropic API key, pick model, set caps, optionally a GitHub repo + fine-grained token. Use the **Test** buttons.
+3. Settings: paste Anthropic API key, pick model, set caps. Under **Output** choose *Download only* or *Download and push to GitHub*; for pushes give the repository URL and a fine-grained token (the page has step-by-step instructions). Use the **Test** buttons.
 4. New project: name + brief. Press Build. Watch the run page; answer questions in the inbox; download or push.
 
 ## Settings form (all editable later; secrets write-only, UI shows only "set, ends in …abcd")
@@ -29,7 +29,7 @@ Where this file and `SPEC.md` disagree, this file wins for v0. Everything in SPE
 - Model: default `claude-opus-5-5`; choices from the price table in `kaisen/config.py` (Opus 5.5, Sonnet 5.5, Haiku 5.5). Unknown model = refuse to run.
 - Effort: low/medium/high (default medium).
 - Caps (USD): per run (default 2), per day (default 8), per project (default 30). Pause-all switch.
-- GitHub (optional): default repo `owner/name`, default branch, token (secret, fine-grained: Contents RW + Pull requests RW on that repo). Test = GET repo and check `permissions.push`.
+- Output (customer's choice, Chas 2026-10-29): *Download only* (default) or *Download and push to GitHub*. Push mode requires the repository URL (`https://github.com/owner/repo[.git]` or `owner/repo`) and a fine-grained token (Contents RW + Pull requests RW on that one repo; in-page instructions with a link to GitHub's token page); optional branch (blank = `kaisen/<slug>`), *push automatically when a build finishes* (default on; result lands in the inbox), *open a pull request*. Test = GET repo and check `permissions.push`.
 - PicoPaaS API URL + key (optional, unused until deploy wiring; stored now so the form is complete).
 
 ## Builder

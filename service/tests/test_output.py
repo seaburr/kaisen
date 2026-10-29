@@ -40,9 +40,10 @@ def test_tarball_refuses_unsafe_names():
 
 def test_github_push_fake(configured):
     c = configured
-    save_settings(c, github_repo="me/app", github_token="fake-github-token-wxyz")
+    save_settings(c, output_mode="github", github_url="https://github.com/me/app", github_token="fake-github-token-wxyz",
+                  open_pr="1")
     add_files(c.pid, README_md="hi")
-    c.post(f"/projects/{c.pid}/push", repo="", open_pr="1")
+    c.post(f"/projects/{c.pid}/push")
     flash = c.client.get(f"/projects/{c.pid}").text
     assert "Pushed to https://github.com/me/app/tree/kaisen/todo-app" in flash and "pull/1" in flash
     assert c.gh.pushes[0]["files"] == {"README_md": "hi"}
@@ -52,15 +53,57 @@ def test_github_push_fake(configured):
 def test_github_push_empty_repo_seeded(configured):
     c = configured
     c.gh.empty = True
-    save_settings(c, github_repo="me/app", github_token="fake-github-token-wxyz")
+    save_settings(c, output_mode="github", github_url="https://github.com/me/app", github_token="fake-github-token-wxyz")
     add_files(c.pid, a="x")
     c.post(f"/projects/{c.pid}/push")
     assert "empty repo was seeded" in c.client.get(f"/projects/{c.pid}").text
 
 
-def test_push_requires_settings(configured):
-    configured.post(f"/projects/{configured.pid}/push")
-    assert "Set a GitHub repo and token" in configured.client.get(f"/projects/{configured.pid}").text
+def test_push_off_by_default(configured):
+    c = configured
+    page = c.client.get(f"/projects/{c.pid}").text
+    assert "GitHub pushes are off" in page and "Push to GitHub now" not in page
+    c.post(f"/projects/{c.pid}/push")
+    assert "Pushing is off" in c.client.get(f"/projects/{c.pid}").text
+    assert c.gh.pushes == []
+
+
+def _finish_build(c):
+    from kaisen.llm import reply, tool_use
+    c.model.script = [reply(tool_use("write_file", {"path": "README.md", "content": "hi"})),
+                      reply(tool_use("finish", {"summary": "done"}))]
+    c.post(f"/projects/{c.pid}/build")
+    while c.tick():
+        pass
+
+
+def test_push_on_finish_reports_in_inbox(configured):
+    c = configured
+    save_settings(c, anthropic_api_key="fake-anthropic-key-0001", output_mode="github",
+                  github_url="https://github.com/me/app.git", github_token="fake-github-token-wxyz", push_on_finish="1")
+    _finish_build(c)
+    assert c.gh.pushes[0]["files"] == {"README.md": "hi"}
+    inbox = c.client.get("/inbox").text
+    assert "push" in inbox and "Pushed to https://github.com/me/app/tree/kaisen/todo-app" in inbox
+
+
+def test_push_on_finish_failure_is_reported_not_raised(configured):
+    c = configured
+    save_settings(c, anthropic_api_key="fake-anthropic-key-0001", output_mode="github",
+                  github_url="https://github.com/me/app", github_token="fake-github-token-wxyz", push_on_finish="1")
+    c.gh.can_push = False
+    _finish_build(c)
+    inbox = c.client.get("/inbox").text
+    assert "Automatic push failed" in inbox and "fake-github-token-wxyz" not in inbox
+
+
+def test_no_push_when_download_only_or_auto_off(configured):
+    c = configured
+    _finish_build(c)  # download only (default)
+    save_settings(c, anthropic_api_key="fake-anthropic-key-0001", output_mode="github",
+                  github_url="https://github.com/me/app", github_token="fake-github-token-wxyz")  # push_on_finish unchecked
+    _finish_build(c)
+    assert c.gh.pushes == []
 
 
 def _gh_transport(empty: bool, log: list):

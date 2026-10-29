@@ -13,12 +13,36 @@
 <label for="cap_run">Per run</label><input id="cap_run" type="number" step="0.01" min="0" name="cap_run" value="{{ rs.cap_run }}">
 <label for="cap_day">Per day</label><input id="cap_day" type="number" step="0.01" min="0" name="cap_day" value="{{ rs.cap_day }}">
 <label for="cap_project">Per project</label><input id="cap_project" type="number" step="0.01" min="0" name="cap_project" value="{{ rs.cap_project }}">
-<h2>GitHub (optional)</h2>
-<label for="github_repo">Default repo (owner/name)</label><input id="github_repo" type="text" name="github_repo" value="{{ rs.github_repo }}">
+<h2>Output</h2>
+<p class="muted">You can always download a project as a .tar.gz from its page. Pushing to GitHub is optional.</p>
+<fieldset class="choice">
+<label><input type="radio" id="mode_download" name="output_mode" value="download"{% if rs.output_mode != "github" %} checked{% endif %}> Download only</label>
+<label><input type="radio" id="mode_github" name="output_mode" value="github"{% if rs.output_mode == "github" %} checked{% endif %}> Download and push to GitHub</label>
+</fieldset>
+<div class="github-only">
+<label for="github_url">GitHub repository URL</label>
+<input id="github_url" type="text" name="github_url" value="{{ 'https://github.com/' ~ rs.github_repo if rs.github_repo else '' }}" placeholder="https://github.com/your-name/your-repo">
+<p class="muted">An existing repository; it can be empty. Kaisen writes to its own branch and never touches your default branch unless you name it below.</p>
 <label for="github_branch">Branch (blank = kaisen/&lt;project&gt;)</label><input id="github_branch" type="text" name="github_branch" value="{{ rs.github_branch }}">
-<label for="github_token">Token <span class="muted">({{ secrets.github_token }})</span></label>
-<input id="github_token" type="password" name="github_token" autocomplete="off" placeholder="leave blank to keep">
+<label for="github_token">Access token <span class="muted">({{ secrets.github_token }})</span></label>
+<input id="github_token" type="password" name="github_token" autocomplete="off" placeholder="github_pat_… (leave blank to keep)">
 <label><input type="checkbox" name="clear_github_token" value="1"> Clear stored token</label>
+<details class="help"{% if not rs.github_token %} open{% endif %}><summary>How to create the access token (about 2 minutes)</summary>
+<ol>
+<li>Open <a href="https://github.com/settings/personal-access-tokens/new" rel="noopener noreferrer" target="_blank">GitHub &gt; Settings &gt; Developer settings &gt; Fine-grained tokens &gt; Generate new token</a>.</li>
+<li><strong>Token name:</strong> <code>kaisen</code>. <strong>Expiration:</strong> 90 days (you can paste a new one here any time).</li>
+<li><strong>Resource owner:</strong> the account or organization that owns the repository above.</li>
+<li><strong>Repository access:</strong> <em>Only select repositories</em>, then pick just that one repository.</li>
+<li><strong>Repository permissions:</strong> set <em>Contents</em> to <strong>Read and write</strong> and <em>Pull requests</em> to <strong>Read and write</strong>. <em>Metadata: Read-only</em> is added automatically. Leave everything else at <em>No access</em>.</li>
+<li>Press <strong>Generate token</strong>, copy it (it starts with <code>github_pat_</code>) and paste it above. GitHub shows it only once.</li>
+<li>If the repository belongs to an organization, an owner may need to approve the token under the organization's <em>Personal access tokens</em> settings.</li>
+<li>Save, then press <strong>Test GitHub</strong> below.</li>
+</ol>
+<p class="muted">Why only these permissions: Kaisen only needs to create commits and branches and open a pull request. Without Workflows or Administration permission it cannot change your Actions, settings or other repositories. The token is stored encrypted and never shown again.</p>
+</details>
+<label><input type="checkbox" name="push_on_finish" value="1"{% if rs.push_on_finish %} checked{% endif %}> Push automatically when a build finishes</label>
+<label><input type="checkbox" name="open_pr" value="1"{% if rs.open_pr %} checked{% endif %}> Open a pull request after pushing</label>
+</div>
 <h2>PicoPaaS (optional, unused for now)</h2>
 <label for="picopaas_url">API URL</label><input id="picopaas_url" type="text" name="picopaas_url" value="{{ rs.picopaas_url }}">
 <label for="picopaas_key">API key <span class="muted">({{ secrets.picopaas_key }})</span></label>
@@ -27,5 +51,5 @@
 <p><button class="primary">Save</button></p></form>
 <h2>Test (uses saved settings)</h2>
 <form class="inline" method="post" action="/settings/test/anthropic"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test Anthropic</button></form>
-<form class="inline" method="post" action="/settings/test/github"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test GitHub</button></form>
+{% if rs.output_mode == "github" %}<form class="inline" method="post" action="/settings/test/github"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test GitHub</button></form>{% endif %}
 {% endblock %}

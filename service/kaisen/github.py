@@ -133,6 +133,8 @@ class FakeGitHub:
     def push(self, repo, files, slug, branch, message, open_pr) -> PushResult:
         if not REPO_RE.match(repo):
             raise GitHubError("Repo must look like owner/name")
+        if not self.can_push:
+            raise GitHubError(f"GitHub refused the push to {repo}: the token has no write access")
         target = branch or f"kaisen/{slug}"
         self.pushes.append({"repo": repo, "branch": target, "files": dict(files), "pr": open_pr, "seeded": self.empty})
         seeded, self.empty = self.empty, False

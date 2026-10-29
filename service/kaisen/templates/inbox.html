@@ -4,5 +4,5 @@
 {% if i.kind == "question" %}<form method="post" action="/inbox/{{ i.id }}/answer"><input type="hidden" name="csrf" value="{{ csrf }}">
 <label for="a{{ i.id }}">Your answer</label><textarea id="a{{ i.id }}" name="answer" required></textarea><p><button class="primary">Answer and resume</button></p></form>
 {% else %}<form method="post" action="/inbox/{{ i.id }}/dismiss"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Dismiss</button></form>
-<p class="muted">Adjust caps or fix the cause, then press Resume build on the project page.</p>{% endif %}</div>
+{% if i.kind != "push" %}<p class="muted">Adjust caps or fix the cause, then press Resume build on the project page.</p>{% endif %}{% endif %}</div>
 {% else %}<p class="muted">Nothing needs you.</p>{% endfor %}{% endblock %}

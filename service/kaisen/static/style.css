@@ -15,3 +15,7 @@ form.inline{display:inline}
 table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:.3rem .5rem;border-bottom:1px solid #ddd}
 .muted{color:#666}.line{white-space:pre-wrap;font:13px/1.4 ui-monospace,monospace;border-bottom:1px solid #e3e3e0;padding:.3rem 0}
 .assistant{color:#0a3d91}.card{background:#fff;border:1px solid #ddd;padding:.8rem 1rem;margin:.8rem 0}
+fieldset.choice{border:0;padding:0;margin:.4rem 0}fieldset.choice label{font-weight:400;margin:.3rem 0}
+form:has(#mode_download:checked) .github-only{display:none}
+details.help{background:#fff;border:1px solid #ddd;padding:.5rem .8rem;margin:.6rem 0}details.help summary{cursor:pointer;font-weight:600}
+details.help li{margin:.25rem 0}code{font:13px ui-monospace,monospace;background:#eee;padding:0 .2rem}

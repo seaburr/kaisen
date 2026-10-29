@@ -41,7 +41,7 @@ def ctx():
     c.csrf = lambda path="/settings": csrf_of(c.client, path)
     c.post = lambda path, **data: c.client.post(path, data={"csrf": c.csrf("/login" if not c.logged else "/settings"), **data})
     c.logged = False
-    c.tick = lambda: tick(lambda rs: c.model, c.lease)
+    c.tick = lambda: tick(lambda rs: c.model, c.lease, lambda tok: c.gh)
     yield c
     if db.engine is not None:
         db.engine.dispose()
@@ -72,7 +72,7 @@ def configured(admin):
 
 def save_settings(ctx, **over):
     form = dict(model="claude-opus-5-5", effort="medium", cap_run="2", cap_day="8", cap_project="30",
-                github_repo="", github_branch="", picopaas_url="")
+                output_mode="download", github_url="", github_branch="", picopaas_url="")
     form.update(over)
     r = ctx.post("/settings", **form)
     assert r.status_code == 303, r.text

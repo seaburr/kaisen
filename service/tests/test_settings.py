@@ -30,7 +30,7 @@ def test_validation(admin):
 def test_test_buttons(admin):
     r = admin.post("/settings/test/anthropic")
     assert "not set" in admin.client.get(r.headers["location"]).text
-    save_settings(admin, anthropic_api_key="fake-anthropic-key-abcd", github_repo="me/app", github_token="fake-github-token-wxyz")
+    save_settings(admin, anthropic_api_key="fake-anthropic-key-abcd", output_mode="github", github_url="https://github.com/me/app", github_token="fake-github-token-wxyz")
     admin.post("/settings/test/anthropic")
     assert "Anthropic OK: model claude-opus-5-5" in admin.client.get("/settings").text
     admin.model.model_ok = False
@@ -48,3 +48,32 @@ def test_pause_toggle(admin):
     assert "Pause-all is <strong>ON" in admin.client.get("/settings").text
     admin.post("/settings/pause")
     assert "Pause-all is <strong>off" in admin.client.get("/settings").text
+
+
+def test_parse_repo():
+    from kaisen.settings_store import parse_repo
+    for ok in ("https://github.com/me/app", "https://github.com/me/app.git", "http://github.com/me/app/", "me/app"):
+        assert parse_repo(ok) == "me/app", ok
+    assert parse_repo("https://github.com/me/my.site.git") == "me/my.site"
+    for bad in ("https://gitlab.com/me/app", "app", "https://github.com/me", "https://github.com/me/app/tree/main", ""):
+        assert parse_repo(bad) == "", bad
+
+
+def test_github_mode_needs_url_and_token(admin):
+    base = dict(model="claude-opus-5-5", effort="medium", cap_run="2", cap_day="8", cap_project="30", output_mode="github")
+    r = admin.post("/settings", **base, github_url="")
+    assert r.status_code == 400 and "repository URL" in r.text
+    r = admin.post("/settings", **base, github_url="https://gitlab.com/me/app", github_token="fake-github-token-wxyz")
+    assert r.status_code == 400 and "github.com/owner/repo" in r.text
+    r = admin.post("/settings", **base, github_url="https://github.com/me/app")
+    assert r.status_code == 400 and "access token" in r.text
+    save_settings(admin, output_mode="github", github_url="https://github.com/me/app", github_token="fake-github-token-wxyz")
+    save_settings(admin, output_mode="github", github_url="https://github.com/me/app")  # stored token is kept
+    page = admin.client.get("/settings").text
+    assert 'value="https://github.com/me/app"' in page and "ends in …wxyz" in page
+    assert "personal-access-tokens/new" in page and ">Test GitHub</button>" in page
+
+
+def test_download_only_hides_github_test(admin):
+    page = admin.client.get("/settings").text
+    assert 'id="mode_download" name="output_mode" value="download" checked' in page and ">Test GitHub</button>" not in page

@@ -34,7 +34,7 @@ def create_app(model_client_factory=default_model_client, github_factory=RealGit
     @asynccontextmanager
     async def lifespan(app):
         auth.ensure_setup_code()
-        worker = Worker(app.state.model_client_factory) if run_worker else None
+        worker = Worker(app.state.model_client_factory, app.state.github_factory) if run_worker else None
         if worker:
             worker.start()
         yield
