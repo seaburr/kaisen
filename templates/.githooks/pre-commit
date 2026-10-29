@@ -1,0 +1,8 @@
+#!/bin/sh
+# Secret scan of staged changes. Enable once per clone: git config core.hooksPath .githooks
+# Never "fix" a finding with .gitleaksignore or an allowlist: change the value so it isn't secret-shaped.
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks protect --staged --redact --verbose
+fi
+echo "pre-commit: gitleaks not installed (brew install gitleaks); refusing to commit unscanned changes." >&2
+exit 1
