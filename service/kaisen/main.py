@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 
-from . import auth, config, db
+from . import auth, config, db, logging_setup
 from .github import RealGitHub
 from .llm import AnthropicClient, ModelError
 from .models import Run
@@ -29,7 +29,7 @@ def create_app(model_client_factory=default_model_client, github_factory=RealGit
     cfg = config.load()
     db.configure(cfg.database_url, cfg.database_ca_cert)
     run_worker = cfg.worker_enabled if start_worker is None else start_worker
-    logging.basicConfig(level=logging.INFO)
+    logging_setup.configure()
 
     @asynccontextmanager
     async def lifespan(app):
