@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Inbox - Kaisen{% endblock %}
+{% block body %}<h1>Inbox</h1>
+{% for i, text in items %}<div class="card"><strong>{{ i.kind }}</strong> &middot; <a href="/projects/{{ i.project_id }}">project {{ i.project_id }}</a><p>{{ text }}</p>
+{% if i.kind == "question" %}<form method="post" action="/inbox/{{ i.id }}/answer"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="a{{ i.id }}">Your answer</label><textarea id="a{{ i.id }}" name="answer" required></textarea><p><button class="primary">Answer and resume</button></p></form>
+{% else %}<form method="post" action="/inbox/{{ i.id }}/dismiss"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Dismiss</button></form>
+<p class="muted">Adjust caps or fix the cause, then press Resume build on the project page.</p>{% endif %}</div>
+{% else %}<p class="muted">Nothing needs you.</p>{% endfor %}{% endblock %}

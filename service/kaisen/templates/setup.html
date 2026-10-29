@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Setup - Kaisen{% endblock %}
+{% block body %}<h1>First-run setup</h1>
+<p>Find the one-time setup code in the app logs (line starting <code>KAISEN SETUP CODE</code>).</p>
+<form method="post" action="/setup"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="code">Setup code</label><input id="code" type="text" name="code" autocomplete="off" required>
+<label for="password">New password (12+ characters)</label><input id="password" type="password" name="password" minlength="12" autocomplete="new-password" required>
+<p><button class="primary">Claim</button></p></form>{% endblock %}

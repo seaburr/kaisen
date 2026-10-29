@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block body %}<h1>Projects</h1>
+<p><a class="button" href="/projects/new">New project</a></p>
+<table><tr><th>Name</th><th>Latest run</th><th>Spend</th></tr>
+{% for p, status, spend in rows %}<tr><td><a href="/projects/{{ p.id }}">{{ p.name }}</a></td><td>{{ status }}</td><td>{{ spend|usd }}</td></tr>
+{% else %}<tr><td colspan="3" class="muted">No projects yet.</td></tr>{% endfor %}</table>{% endblock %}

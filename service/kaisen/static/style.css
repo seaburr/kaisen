@@ -1,0 +1,17 @@
+body{font:15px/1.5 system-ui,sans-serif;margin:0;color:#1d1d1f;background:#f6f6f4}
+header{background:#1d1d1f;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center}
+header a,header button{color:#f6f6f4;text-decoration:none;background:none;border:0;font:inherit;cursor:pointer}
+header form{margin:0;margin-left:auto}
+main{max-width:56rem;margin:1.5rem auto;padding:0 1rem}
+h1{font-size:1.4rem}h2{font-size:1.1rem;margin-top:1.5rem}
+label{display:block;margin:.8rem 0 .2rem;font-weight:600}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;box-sizing:border-box;padding:.4rem;font:inherit}
+textarea{min-height:9rem}
+button.primary,a.button{background:#0b5fff;color:#fff;border:0;padding:.45rem .9rem;border-radius:4px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary{padding:.4rem .8rem;font:inherit;cursor:pointer}
+form.inline{display:inline}
+.flash{background:#e7f0ff;border:1px solid #9bbcff;padding:.5rem .8rem;margin-bottom:1rem}
+.error{background:#ffe9e9;border:1px solid #e99;padding:.5rem .8rem;margin-bottom:1rem}
+table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:.3rem .5rem;border-bottom:1px solid #ddd}
+.muted{color:#666}.line{white-space:pre-wrap;font:13px/1.4 ui-monospace,monospace;border-bottom:1px solid #e3e3e0;padding:.3rem 0}
+.assistant{color:#0a3d91}.card{background:#fff;border:1px solid #ddd;padding:.8rem 1rem;margin:.8rem 0}

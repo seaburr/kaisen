@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Spend - Kaisen{% endblock %}
+{% block body %}<h1>Spend</h1>
+<p>Today {{ today|usd }} of ${{ rs.cap_day }} &middot; all time {{ total|usd }} &middot; pause-all {{ "ON" if rs.paused else "off" }}</p>
+<h2>By model</h2><table><tr><th>Model</th><th>Calls</th><th>USD</th></tr>
+{% for m, n, usd in by_model %}<tr><td>{{ m }}</td><td>{{ n }}</td><td>{{ usd|usd }}</td></tr>{% else %}<tr><td colspan="3" class="muted">No usage yet.</td></tr>{% endfor %}</table>
+<h2>By project (cap ${{ rs.cap_project }})</h2><table><tr><th>Project</th><th>USD</th></tr>
+{% for n, usd in by_project %}<tr><td>{{ n }}</td><td>{{ usd|usd }}</td></tr>{% endfor %}</table>{% endblock %}

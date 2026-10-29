@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Settings - Kaisen{% endblock %}
+{% block body %}<h1>Settings</h1>
+<form method="post" action="/settings/pause"><input type="hidden" name="csrf" value="{{ csrf }}">
+<p>Pause-all is <strong>{{ "ON" if rs.paused else "off" }}</strong> <button class="secondary">{{ "Resume all" if rs.paused else "Pause all" }}</button></p></form>
+<form method="post" action="/settings"><input type="hidden" name="csrf" value="{{ csrf }}">
+<h2>Anthropic</h2>
+<label for="anthropic_api_key">API key <span class="muted">({{ secrets.anthropic_api_key }})</span></label>
+<input id="anthropic_api_key" type="password" name="anthropic_api_key" autocomplete="off" placeholder="leave blank to keep">
+<label><input type="checkbox" name="clear_anthropic_api_key" value="1"> Clear stored key</label>
+<label for="model">Model</label><select id="model" name="model">{% for m in models %}<option value="{{ m }}"{% if m == rs.model %} selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+<label for="effort">Effort</label><select id="effort" name="effort">{% for e in efforts %}<option value="{{ e }}"{% if e == rs.effort %} selected{% endif %}>{{ e }}</option>{% endfor %}</select>
+<h2>Caps (USD)</h2>
+<label for="cap_run">Per run</label><input id="cap_run" type="number" step="0.01" min="0" name="cap_run" value="{{ rs.cap_run }}">
+<label for="cap_day">Per day</label><input id="cap_day" type="number" step="0.01" min="0" name="cap_day" value="{{ rs.cap_day }}">
+<label for="cap_project">Per project</label><input id="cap_project" type="number" step="0.01" min="0" name="cap_project" value="{{ rs.cap_project }}">
+<h2>GitHub (optional)</h2>
+<label for="github_repo">Default repo (owner/name)</label><input id="github_repo" type="text" name="github_repo" value="{{ rs.github_repo }}">
+<label for="github_branch">Branch (blank = kaisen/&lt;project&gt;)</label><input id="github_branch" type="text" name="github_branch" value="{{ rs.github_branch }}">
+<label for="github_token">Token <span class="muted">({{ secrets.github_token }})</span></label>
+<input id="github_token" type="password" name="github_token" autocomplete="off" placeholder="leave blank to keep">
+<label><input type="checkbox" name="clear_github_token" value="1"> Clear stored token</label>
+<h2>PicoPaaS (optional, unused for now)</h2>
+<label for="picopaas_url">API URL</label><input id="picopaas_url" type="text" name="picopaas_url" value="{{ rs.picopaas_url }}">
+<label for="picopaas_key">API key <span class="muted">({{ secrets.picopaas_key }})</span></label>
+<input id="picopaas_key" type="password" name="picopaas_key" autocomplete="off" placeholder="leave blank to keep">
+<label><input type="checkbox" name="clear_picopaas_key" value="1"> Clear stored key</label>
+<p><button class="primary">Save</button></p></form>
+<h2>Test (uses saved settings)</h2>
+<form class="inline" method="post" action="/settings/test/anthropic"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test Anthropic</button></form>
+<form class="inline" method="post" action="/settings/test/github"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="secondary">Test GitHub</button></form>
+{% endblock %}

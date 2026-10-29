@@ -1,0 +1,11 @@
+apiVersion: picopaas/v1
+name: kaisen
+image: ghcr.io/<owner>/kaisen:<sha>
+port: 8080
+healthCheck: /healthz
+resources:
+  db: true
+  db_engine: pg
+secrets: [SECRET_KEY]
+env:
+  ENVIRONMENT: prod

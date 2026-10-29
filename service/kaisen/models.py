@@ -1,0 +1,100 @@
+from datetime import datetime, timezone
+
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .db import Base
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")
+    secret: Mapped[bool] = mapped_column(Boolean, default=False)  # value is Fernet-encrypted
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    password_hash: Mapped[str] = mapped_column(String(300))
+    created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class LoginAttempt(Base):
+    __tablename__ = "login_attempts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scope: Mapped[str] = mapped_column(String(16), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    slug: Mapped[str] = mapped_column(String(120), unique=True)
+    brief: Mapped[str] = mapped_column(Text)
+    github_repo: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ProjectFile(Base):
+    __tablename__ = "project_files"
+    __table_args__ = (UniqueConstraint("project_id", "path"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    path: Mapped[str] = mapped_column(String(300))
+    content: Mapped[str] = mapped_column(Text)
+    size: Mapped[int] = mapped_column(Integer)
+
+
+class Run(Base):
+    __tablename__ = "runs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    # queued | running | waiting | done | stopped | error
+    status: Mapped[str] = mapped_column(String(16), default="queued", index=True)
+    messages: Mapped[list] = mapped_column(JSON, default=list)
+    pending: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # tool results held while waiting on ask_human
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Event(Base):
+    __tablename__ = "events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id"), index=True)
+    project_id: Mapped[int] = mapped_column(Integer, index=True)
+    kind: Mapped[str] = mapped_column(String(16), default="usage")
+    model: Mapped[str] = mapped_column(String(64))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_write_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_read_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    usd: Mapped[float] = mapped_column(Float, default=0.0)
+    at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class InboxItem(Base):
+    __tablename__ = "inbox"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id"))
+    kind: Mapped[str] = mapped_column(String(16))  # question | budget | refusal | limit | error
+    text: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(8), default="open", index=True)  # open | closed
+    created: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Lease(Base):
+    __tablename__ = "lease"
+    name: Mapped[str] = mapped_column(String(32), primary_key=True)
+    holder: Mapped[str] = mapped_column(String(64))
+    token: Mapped[int] = mapped_column(Integer, default=1)
+    expires: Mapped[datetime] = mapped_column(DateTime)

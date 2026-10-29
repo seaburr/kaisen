@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}{{ p.name }} - Kaisen{% endblock %}
+{% block body %}<h1>{{ p.name }}</h1>
+<div class="card">Run status: <strong>{{ run.status if run else "no runs" }}</strong> &middot; project spend {{ total|usd }}{% if run %} &middot; this run {{ run.cost_usd|usd }}{% endif %}
+{% if error %}<p>{{ error }}</p>{% endif %}{% if summary %}<p>Summary: {{ summary }}</p>{% endif %}
+<form class="inline" method="post" action="/projects/{{ p.id }}/build"><input type="hidden" name="csrf" value="{{ csrf }}">
+<button class="primary">{% if run and run.status in ["stopped","error"] %}Resume build{% else %}Build{% endif %}</button></form>
+{% if run and run.status == "waiting" %}<a href="/inbox">Answer the question in the inbox</a>{% endif %}</div>
+<h2>Files ({{ files|length }})</h2>
+<ul>{% for path, size in files %}<li>{{ path }} <span class="muted">{{ size }} bytes</span></li>{% else %}<li class="muted">No files yet.</li>{% endfor %}</ul>
+<h2>Output</h2>
+<p><a class="button" href="/projects/{{ p.id }}/download">Download .tar.gz</a></p>
+<form method="post" action="/projects/{{ p.id }}/push"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="repo">GitHub repo (owner/name)</label><input id="repo" type="text" name="repo" value="{{ repo }}">
+<p><label><input type="checkbox" name="open_pr" value="1"> Open a pull request</label></p>
+<button class="secondary">Push to GitHub</button></form>
+<h2>Transcript</h2>
+{% for role, text in lines %}<div class="line {{ role }}"><strong>{{ role }}</strong> {{ text }}</div>{% else %}<p class="muted">Nothing yet.</p>{% endfor %}
+{% endblock %}

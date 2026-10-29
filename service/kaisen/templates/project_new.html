@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block body %}<h1>New project</h1>
+<form method="post" action="/projects/new"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="name">Name</label><input id="name" type="text" name="name" maxlength="120" required>
+<label for="brief">Brief: what should be built?</label><textarea id="brief" name="brief" maxlength="20000" required></textarea>
+<p><button class="primary">Create</button></p></form>{% endblock %}
