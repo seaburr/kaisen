@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,6 +14,7 @@ from .models import Bundle, Event, InboxItem, Project, ProjectFile, Run, User
 from .picopaas import PicoPaasError
 from .redact import redact, transcript_lines
 
+log = logging.getLogger("kaisen.routes")
 router = APIRouter()
 env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"), autoescape=select_autoescape(["html"]))
 env.filters["usd"] = lambda v: f"${(v or 0):.4f}"
@@ -267,6 +269,7 @@ def settings_test(what: str, request: Request, user=Depends(auth.current_user), 
             raise HTTPException(404)
     except (ModelError, GitHubError, PicoPaasError) as e:
         msg = f"Test failed: {e}"
+        log.warning("settings test %s failed: %s", what, redact(str(e), rs.secret_values()))
     return back(request, "/settings", redact(msg, rs.secret_values()))
 
 

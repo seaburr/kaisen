@@ -63,8 +63,8 @@ class RealPicoPaas:
     def _req(self, method, path, **kw):
         try:
             r = self.http.request(method, path, **kw)
-        except httpx.HTTPError:
-            raise PicoPaasError("Could not reach PicoPaaS") from None
+        except httpx.HTTPError as e:  # the exception type (ConnectTimeout, ConnectError...) is what tells network from DNS/TLS
+            raise PicoPaasError(f"Could not reach PicoPaaS at {self.http.base_url} ({type(e).__name__})") from None
         if r.status_code >= 400:
             raise PicoPaasError(_plain(r))
         return r.json()
