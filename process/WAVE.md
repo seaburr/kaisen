@@ -39,8 +39,10 @@ BLOCKED or HANDOFF. DONE lines state verification honestly: test counts, `NOT br
 `NEEDS-SECURITY-REVIEW`, `uncommitted` until scm-security pushes (it clears the marker and records SHAs + CI run ids).
 One START and one DONE per chunk. Keep each line to what the next reader needs; detail goes in the PR/commit/docs.
 
-## Rules for everyone
+## Common rules (every role)
 
+- One chunk per invocation; ledger START and DONE lines; end with a 3-5 line summary.
+- Never edit `AGENTS.md`/`CLAUDE.md`/`BRIEF.md` unless that is the task; never print secrets.
 - Only scm-security commits/pushes. Dependabot-steward may merge PRs and push to PR branches only.
 - Reviewer independence: the committer is not the security reviewer of its own push. Risky diffs (authz, RBAC,
   NetworkPolicy, SQL/YAML generation, secrets, quotas, egress/ingress, provider calls) get `security-reviewer` before
@@ -53,10 +55,33 @@ One START and one DONE per chunk. Keep each line to what the next reader needs; 
 - Token thrift: one chunk per invocation; read ranges not whole files; focused tests while iterating, full suite once;
   sonnet for workers; no re-reading what the ledger already says; no new .md files unless asked.
 
+## Model tiers (cost policy)
+Set `model:` in each agent file; the manager may override per task.
+- **Default: sonnet** for implementation and checking (backend-dev, frontend-dev, infra-ops, qa-tester, ui-ux-designer, sre, scm-security, dependabot-steward, marketing-writer).
+- **Cheapest tier (haiku)** for routine/docs work (tech-writer, release-blogger) and mechanical edits.
+- **Strongest tier (opus)** only for hard design and security (security-reviewer, architecture decisions by the manager). Never for routine fixes.
+- Escalate one tier only after a failed attempt, and say so in the ledger. Fewer, bigger-context chunks beat many opus calls.
+
+## Spec -> tasks, and the reviewer gate
+- Before dispatching a wave the manager copies `templates/TASKS.md` to `docs/TASKS.md` and fills it: requirement,
+  acceptance check, owner role, files. No task without an acceptance check.
+- Reviewer-after-implementer: when an implementer logs DONE, qa-tester checks the result against the task's acceptance
+  row in a fresh sub-agent context (spec compliance, then tests), BEFORE security-reviewer sees risky diffs. A failed
+  check goes back to the implementer with the failing output. scm-security commits only tasks that passed both gates.
+
+## Deploying to PicoPaaS
+Projects hosted on PicoPaaS read its docs instead of guessing: https://platform.picopaas.xyz/guide/user (User Guide,
+including Kaisen and `kaisen.json` and the limits), `/guide/api`, `/guide/cli`, `/guide/recipes`. In short: one Docker
+image per app, listening on the declared port with a health path that returns 2xx; configuration via env vars and
+secrets (never baked into the image); MySQL, PostgreSQL, bucket and volume are attached per app and reach the app as
+env-var references the platform resolves; the platform runs migrations/startup you define, not you. Memory, CPU, image,
+DB and bucket caps live in the guide and the platform config: quote them from there, never hard-code numbers.
+
 ## Feedback wave (the /wave workflow)
 
 Run when {{HUMAN}} hands over a review/feedback doc. The manager drives it; each phase has an exit gate.
 
+0. **Plan.** Manager writes `docs/TASKS.md` (spec -> tasks) once findings are grouped; see above.
 1. **Intake.** Read the doc; number every finding; put unclear items in `docs/QUESTIONS.md` and proceed on the rest.
    *Gate:* every finding has an id, an owner role and a size (S/M/L). Ledger `[manager] START`.
 2. **Grouping.** Cluster findings by area (backend, frontend, infra, docs, copy) and by file overlap; items touching the

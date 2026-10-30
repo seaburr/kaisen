@@ -17,7 +17,7 @@ README.md  LESSONS.md
 agents/            12 generic agent definitions (copy to <project>/.claude/agents/)
 process/WAVE.md    roles registry, ledger format, rules, feedback-wave workflow
 templates/
-  BRIEF.md CLAUDE.md
+  BRIEF.md AGENTS.md (single source) CLAUDE.md (pointer) TASKS.md (spec -> tasks)
   docs/{QUESTIONS.md,LEDGER.md,SECRETS_POLICY.md,requests/0001-example.md}
   .githooks/pre-commit        gitleaks on staged changes
 ```
@@ -25,7 +25,7 @@ templates/
 
 ## Start a new project
 1. `mkdir myproj && cd myproj && git init`
-2. Copy `templates/BRIEF.md`, `templates/CLAUDE.md`, `templates/docs/`, `templates/.githooks/` into it; copy
+2. Copy `templates/BRIEF.md`, `templates/AGENTS.md`, `templates/CLAUDE.md`, `templates/TASKS.md`, `templates/docs/`, `templates/.githooks/` into it; copy
    `process/WAVE.md` to `process/WAVE.md` (or `docs/PROCESS.md`; fix links) and `agents/*.md` to `.claude/agents/`.
 3. Replace `{{placeholders}}` (`grep -rn '{{' .`): PROJECT, HUMAN, project_slug, domain, config_file, repo_url, kubeconfig_path.
 4. In each agent file, edit the "Project-specific" section for your stack; drop roles you do not need and update the registry in WAVE.md.

@@ -5,7 +5,8 @@ model: sonnet
 tools: Bash, Read, Grep, Glob, Edit, Write, WebFetch, WebSearch
 ---
 
-> KIT NOTE: placeholders {{PROJECT}}, {{HUMAN}}, {{project_slug}}, {{domain}} are filled in per project (see ../README.md). Paths, stack names and examples below come from the PicoPaaS project (FastAPI + Vue + Kubernetes) and are marked in the "Project-specific" section at the end; replace them for your stack.
+Shared rules (one chunk per run, ledger, single committer, token thrift): `process/WAVE.md` "Common rules". Replace stack-specific paths below for your project.
+
 You are the Infra/Ops engineer for {{PROJECT}}. Read `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/requests/`, and the "Now / Next"
 section of `docs/LEDGER.md` first. Work on exactly ONE chunk per invocation.
 
@@ -20,8 +21,8 @@ Applies of approved requests are allowed only per the infra-apply permission: ru
 Recipe knowledge (how to run Ghost, WordPress, etc. on {{PROJECT}}) is captured as docs in `docs/RECIPES.md` and
 `examples/`, never as a per-app agent.
 
-Rules: never commit or push. No secrets in files. Use variables and GitHub secrets. Append ledger START/DONE
-lines and update "Now / Next". End with a 3–5 line summary.
+Rules: no secrets in files (variables and GitHub secrets). Update "Now / Next".
 
-## Project-specific (replace for your stack)
-The stack, directory names, config file (`app/config.py`), infra provider and domain mentioned above are the original PicoPaaS example. Keep the process rules (one chunk per run, ledger START/DONE, only scm-security commits, human gates via QUESTIONS.md and requests) and swap the rest.
+
+## Deploying to PicoPaaS
+Docs: https://platform.picopaas.xyz/guide/user (User Guide, incl. Kaisen `kaisen.json` and limits), `/guide/api`, `/guide/cli`, `/guide/recipes`. Summary in `process/WAVE.md` "Deploying to PicoPaaS". Caps live in the guide; do not hard-code numbers.

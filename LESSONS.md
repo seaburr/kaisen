@@ -18,6 +18,13 @@ Distilled from a large agent-built project. Apply them as defaults.
 - Budget tokens: one chunk per invocation, read ranges not whole files, focused tests while iterating and the full
   suite once, cheaper model for workers.
 
+- Rules agents must follow every time belong in a check script run by CI, not in memory or prose. A page-width rule
+  recurred three times until `npm run check:layout` failed the build on a stray `max-w-*`. (2026-10-30)
+- Derive test expectations and UI limits from the config source (settings endpoint, constants), never literals. A UI
+  hard-coded 4000 while the backend allowed 8000. (2026-10-30)
+- Keep instruction files lean (about 60 lines each); shared rules live once in the process doc. Evidence goes in the
+  entry's date; prune lessons quarterly.
+
 ## Frontend
 - `vue-tsc` mis-scopes template variables (v-for / slot vars) in some versions; a clean typecheck is not proof the UI works.
   Also run the build and look at it in a browser. Record `NOT browser-checked` if you cannot.

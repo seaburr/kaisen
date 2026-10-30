@@ -9,6 +9,9 @@ What this repo is now (2026-10-30):
   ran as its own tenant app; it now lives **inside PicoPaaS** (`picopaas/app/kaisen/`, Preview). Do not add features to
   `service/`. Product work on Kaisen happens in seaburr/picopaas.
 
+Kit conventions: AGENTS.md is the single source of project instructions (CLAUDE.md only points to it); keep every
+instruction file near 60 lines; shared agent rules live once in `process/WAVE.md`.
+
 Rules carried over from PicoPaaS: only the `scm-security` agent commits and pushes; gitleaks on every commit, never an
 allowlist (change fixture values instead); never commit secrets. The standalone test instance and its previews run on
 the PicoPaaS test user account; delete them only after asking Chas.
