@@ -4,7 +4,12 @@ Extracted from the PicoPaaS project. It packages the process, agent definitions 
 Claude Code session (the "manager") run a small team of subagents on a software project with a written contract,
 a ledger, human approval gates and a single committer.
 
-This is a kit of files to copy, not a running system. Git is initialised here; nothing is committed and there is no remote.
+This is a kit of files to copy. Repository: github.com/seaburr/kaisen.
+
+> **Status (2026-10-30):** Kaisen the *product* (build an app from a brief, deploy it to PicoPaaS) now lives inside
+> PicoPaaS as a Preview feature (seaburr/picopaas, `app/kaisen/`). The `service/` and `runtime/` folders here are the
+> retired standalone version, kept as history. Operations guide for both repos: `picopaas/docs/KAISEN_OPS.md`.
+> Claude Code context for this repo: `CLAUDE.md`.
 
 ## Tree
 ```
