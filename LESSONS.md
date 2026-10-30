@@ -24,6 +24,11 @@ Distilled from a large agent-built project. Apply them as defaults.
   hard-coded 4000 while the backend allowed 8000. (2026-10-30)
 - Keep instruction files lean (about 60 lines each); shared rules live once in the process doc. Evidence goes in the
   entry's date; prune lessons quarterly.
+- Agents that cannot run code tend to leave their own checklists unticked and to trust a tool message over their own
+  instructions (2026-10-30 demo builds: 4 of 5 left PLAN.md items open; a "call it again" tool hint produced three
+  identical calls and a stopped run). Make the final step tick the plan, and tell the agent what to do between retries.
+- A tool hint that pushes the agent toward a different architecture ("add tests" on a no-server static app made it add a
+  server) overrides the brief. State in the prompt that the brief's constraints win over tool hints.
 
 ## Frontend
 - `vue-tsc` mis-scopes template variables (v-for / slot vars) in some versions; a clean typecheck is not proof the UI works.
