@@ -1,0 +1,26 @@
+# Weekly dependency PRs, grouped per ecosystem so each week is a handful of PRs, not dozens.
+# Every PR runs release.yml's tests; merge only through the normal review (scm-security pushes, never auto-merge).
+# service/ and runtime/ are the retired standalone Kaisen (the product lives in seaburr/picopaas, whose own
+# Dependabot covers app/kaisen and images/kaisen-runtime). They are covered here because the standalone test
+# instance still runs until it is retired; drop these entries when service/ and runtime/ are deleted.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions: { patterns: ["*"] }
+
+  - package-ecosystem: pip
+    directory: "/service"
+    schedule: { interval: weekly, day: monday }
+    groups:
+      python: { patterns: ["*"], update-types: [minor, patch] }
+
+  - package-ecosystem: docker
+    directories:
+      - "/service"
+      - "/runtime"
+    schedule: { interval: weekly, day: monday }
+    groups:
+      base-images: { patterns: ["*"], update-types: [minor, patch] }
