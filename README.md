@@ -45,6 +45,7 @@ Goals for this kit (the agent-factory process), from the factory assessment. Sta
 *product* has its own roadmap: `picopaas/docs/design/kaisen.md`.
 
 Next:
+- CI already runs `ruff check .` (service/, config `service/ruff.toml`) before the tests in `release.yml`.
 - Repeatable checks in CI: a coverage floor and a Playwright smoke test (being added to PicoPaaS first, then copied
   into `templates/` as a CI example).
 - A `/wave` skill with fixed phases and enforced exit gates (the Kaisen builder's plan gate and reviewer are the model).

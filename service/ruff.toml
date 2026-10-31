@@ -1,0 +1,7 @@
+# Lint only (no `ruff format`). Defaults are E4, E7, E9, F; long lines are deliberate (no E501).
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# pytest fixtures are imported from conftest and then taken as arguments
+"tests/**" = ["F811"]

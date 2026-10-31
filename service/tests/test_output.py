@@ -1,5 +1,4 @@
 import json
-import gzip
 import io
 import tarfile
 

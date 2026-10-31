@@ -6,7 +6,6 @@ import pytest
 from kaisen import builder, config, db, previews, settings_store
 from kaisen.llm import reply, tool_use
 from kaisen.models import Bundle, InboxItem, Project, Run
-from kaisen.picopaas import PicoPaasError
 from tests.conftest import save_settings
 
 KEY = "fake-picopaas-key-1234"

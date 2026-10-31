@@ -2,7 +2,7 @@ import pytest
 
 from kaisen import builder, db
 from kaisen.llm import ModelError, reply, tool_use
-from kaisen.models import Event, InboxItem, Project, ProjectFile, Run
+from kaisen.models import Event, InboxItem, ProjectFile, Run
 from kaisen.worker import Lease
 from tests.conftest import save_settings
 

@@ -1,4 +1,3 @@
-import re
 
 from kaisen import db
 from kaisen.models import Setting, User

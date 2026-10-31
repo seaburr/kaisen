@@ -1,5 +1,4 @@
 from kaisen import db, settings_store
-from kaisen.github import GitHubError
 from kaisen.models import Setting
 from tests.conftest import save_settings
 

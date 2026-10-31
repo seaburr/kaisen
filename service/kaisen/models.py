@@ -4,11 +4,11 @@ from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, Larg
 from sqlalchemy.dialects.mysql import LONGBLOB, MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column
 
+from .db import Base
+
 # MySQL TEXT holds 64 KB; files may be 200 KB and briefs can be long.
 LongText = Text().with_variant(MEDIUMTEXT(), "mysql")
 LongBlob = LargeBinary().with_variant(LONGBLOB(), "mysql")
-
-from .db import Base
 
 
 def utcnow() -> datetime:
