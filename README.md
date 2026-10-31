@@ -41,11 +41,22 @@ templates/
 - The manager-driven feedback wave in process/WAVE.md (run by hand).
 
 ## Planned (do NOT exist yet)
-Per the factory assessment, these are goals, not features of this kit:
+Goals for this kit (the agent-factory process), from the factory assessment. Status as of 2026-10-30. Kaisen the
+*product* has its own roadmap: `picopaas/docs/design/kaisen.md`.
+
+Next:
+- Repeatable checks in CI: a coverage floor and a Playwright smoke test (being added to PicoPaaS first, then copied
+  into `templates/` as a CI example).
+- A `/wave` skill with fixed phases and enforced exit gates (the Kaisen builder's plan gate and reviewer are the model).
+
+Later:
 - Smaller parameterized roster (planner, builder, verifier, security-reviewer, docs) distributed as a plugin.
-- A `/wave` skill with fixed phases and enforced exit gates.
 - Issues plus an append-only `events.jsonl` as state, with "Now / Next" generated instead of hand-written.
-- PR-per-issue with security review on every change (not per wave).
-- A staging environment instead of pushing straight to production.
 - A headless orchestrator so the human is not the dispatcher.
-- Repeatable checks (Playwright smoke, coverage floor) moved into CI; Dependabot auto-merge for green patch/minor.
+
+Decided against (for now):
+- A staging environment: real monthly cost on a small budget; Kaisen previews and CI cover most of the need.
+- PR-per-issue with security review on every change: heavy for a one-person project; a security review per
+  feature batch has been catching issues.
+- Dependabot auto-merge: conflicts with the single-committer rule. Dependabot opens PRs weekly (this repo and
+  PicoPaaS); dependabot-steward and scm-security merge them.
