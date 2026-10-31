@@ -24,3 +24,7 @@ updates:
     schedule: { interval: weekly, day: monday }
     groups:
       base-images: { patterns: ["*"], update-types: [minor, patch] }
+    ignore:
+      # node: only even-numbered (LTS) majors, bumped by hand; Dependabot proposes odd "Current" releases too (e.g. 25)
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
