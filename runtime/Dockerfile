@@ -1,5 +1,5 @@
 # Generic runtime for Kaisen previews: downloads a project bundle at boot, installs its deps and runs it.
-FROM node:22-bookworm-slim
+FROM node:25-bookworm-slim
 ENV HOME=/home/app PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
     npm_config_cache=/home/app/.npm npm_config_update_notifier=false PORT=8080
 RUN apt-get update \
