@@ -14,7 +14,7 @@ This is a kit of files to copy. Repository: github.com/seaburr/kaisen.
 ## Tree
 ```
 README.md  LESSONS.md
-agents/            12 generic agent definitions (copy to <project>/.claude/agents/)
+agents/            13 generic agent definitions (copy to <project>/.claude/agents/)
 process/WAVE.md    roles registry, ledger format, rules, feedback-wave workflow
 templates/
   BRIEF.md AGENTS.md (single source) CLAUDE.md (pointer) TASKS.md (spec -> tasks)
